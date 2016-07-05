@@ -16,6 +16,37 @@ const (
 	TwitchUrl = protocol + "twitch.tv/"
 )
 
+type Streams struct {
+	Links struct {
+		Featured string
+		Followed string
+		Next     string
+		Self     string
+		Summary  string
+	}
+	Total   float64
+	Streams []struct {
+		ID    float64
+		Links struct {
+			Self string
+		}
+		AverageFps float64
+		Channel    Channel
+		CreatedAt  string
+		Delay      float64
+		Game       string
+		IsPlaylist bool
+		Preview    struct {
+			Large    string
+			Medium   string
+			Small    string
+			Template string
+		}
+		VideoHeight float64
+		Viewers     float64
+	}
+}
+
 type Game struct {
 	ID    float64
 	Links struct{}
@@ -84,7 +115,7 @@ type Channel struct {
 	Views                        int
 }
 
-type onlineStreams struct {
+type onlineSubs struct {
 	_links struct {
 		Next string
 		Self string
@@ -143,24 +174,44 @@ func GetFollowedChannels(username string) followingChannels {
 	return output
 }
 
-func GetOnlineStreams(oauthToken string) onlineStreams {
-	var output onlineStreams
-	u := url + "/streams/followed?oauth_token={oauthToken}&stream_type=live"
-	u = strings.Replace(u, "{oauthToken}", oauthToken, 1)
+func GetOnlineSubs(oauthToken string) onlineSubs {
+	var output onlineSubs
+	u := url + "/streams/followed?oauth_token=" + oauthToken + "&stream_type=live"
+	json.Unmarshal(query(u), &output)
+	return output
+}
+
+func GetStreams(game, streamType string, limit, offset int) Streams {
+	u := url + "/streams?"
+	if game != "" {
+		u += "game=" + game
+	}
+	if streamType != "" {
+		u += "stream_type=" + streamType
+	}
+	if limit != 0 {
+		u += "limit=" + strconv.Itoa(limit)
+	} else {
+		u += "limit=10"
+	}
+	if offset != 0 {
+		u += "offset=" + strconv.Itoa(offset)
+	}
+	var output Streams
 	json.Unmarshal(query(u), &output)
 	return output
 }
 
 func GetTopGames(limit, offset *int) TopGames {
 	var output TopGames
-	u := url + "/games/top"
+	u := url + "/games/top?"
 	if *limit == 0 {
-		u += "?limit=10"
+		u += "limit=10"
 	} else {
 		if *limit > 100 {
 			*limit = 100
 		}
-		u += "?limit=" + strconv.Itoa(*limit)
+		u += "limit=" + strconv.Itoa(*limit)
 	}
 	if *offset != 0 {
 		u += "&offset=" + strconv.Itoa(*offset)
