@@ -174,7 +174,7 @@ func GetFollowedChannels(username string) followingChannels {
 	return output
 }
 
-func GetOnlineSubs(oauthToken string) onlineSubs {
+func GetLiveSubs(oauthToken string) onlineSubs {
 	var output onlineSubs
 	u := url + "/streams/followed?oauth_token=" + oauthToken + "&stream_type=live"
 	json.Unmarshal(query(u), &output)
