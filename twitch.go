@@ -187,15 +187,15 @@ func GetStreams(game, streamType string, limit, offset int) Streams {
 		u += "game=" + game
 	}
 	if streamType != "" {
-		u += "stream_type=" + streamType
+		u += "&stream_type=" + streamType
 	}
 	if limit != 0 {
-		u += "limit=" + strconv.Itoa(limit)
+		u += "&limit=" + strconv.Itoa(limit)
 	} else {
-		u += "limit=10"
+		u += "&limit=10"
 	}
 	if offset != 0 {
-		u += "offset=" + strconv.Itoa(offset)
+		u += "&offset=" + strconv.Itoa(offset)
 	}
 	var output Streams
 	json.Unmarshal(query(u), &output)
