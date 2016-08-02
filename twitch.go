@@ -159,10 +159,20 @@ type followingChannels struct {
 	}
 }
 
-func query(url string) []byte {
-	res, _ := http.Get(url)
+type FollowChannel struct {
+	notifications bool
+	Channel       Channel
+}
+
+func query(url, method string) []byte {
+	client := &http.Client{}
+	if method == "" {
+		method = "GET"
+	}
+	request, _ := http.NewRequest(method, url, nil)
+	res, _ := client.Do(request)
 	ret, _ := ioutil.ReadAll(res.Body)
-	res.Body.Close()
+	defer res.Body.Close()
 	return ret
 }
 
@@ -170,14 +180,14 @@ func GetFollowedChannels(username string) followingChannels {
 	var output followingChannels
 	u := url + "/users/{username}/follows/channels?direction=DESC&sortby=created_at"
 	u = strings.Replace(u, "{username}", username, 1)
-	json.Unmarshal(query(u), &output)
+	json.Unmarshal(query(u, ""), &output)
 	return output
 }
 
 func GetLiveSubs(oauthToken string) onlineSubs {
 	var output onlineSubs
 	u := url + "/streams/followed?oauth_token=" + oauthToken + "&stream_type=live"
-	json.Unmarshal(query(u), &output)
+	json.Unmarshal(query(u, ""), &output)
 	return output
 }
 
@@ -198,7 +208,7 @@ func GetStreams(game, streamType string, limit, offset int) Streams {
 		u += "&offset=" + strconv.Itoa(offset)
 	}
 	var output Streams
-	json.Unmarshal(query(u), &output)
+	json.Unmarshal(query(u, ""), &output)
 	return output
 }
 
@@ -216,6 +226,16 @@ func GetTopGames(limit, offset *int) TopGames {
 	if *offset != 0 {
 		u += "&offset=" + strconv.Itoa(*offset)
 	}
-	json.Unmarshal(query(u), &output)
+	json.Unmarshal(query(u, ""), &output)
+	return output
+}
+
+func Follow(oauthToken, username, channel string, notification bool) FollowChannel {
+	var output FollowChannel
+	u := url + "/users/" + username + "/follows/channels/" + channel + "?oauth_token=" + oauthToken
+	if notification == true {
+		u += "&notification"
+	}
+	json.Unmarshal(query(u, "PUT"), &output)
 	return output
 }
