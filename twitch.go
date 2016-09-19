@@ -191,10 +191,10 @@ func GetLiveSubs(oauthToken string) onlineSubs {
 	return output
 }
 
-func GetStreams(game, streamType string, limit, offset int) Streams {
-	u := url + "/streams?"
+func GetStreams(oauthToken, game, streamType string, limit, offset int) Streams {
+	u := url + "/streams?oauth_token="+oauthToken
 	if game != "" {
-		u += "game=" + game
+		u += "&game=" + game
 	}
 	if streamType != "" {
 		u += "&stream_type=" + streamType
