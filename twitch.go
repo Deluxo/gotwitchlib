@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 const (
@@ -176,10 +175,9 @@ func query(url, method string) []byte {
 	return ret
 }
 
-func GetFollowedChannels(username string) followingChannels {
+func GetFollowedChannels(oauthToken, username string) followingChannels {
 	var output followingChannels
-	u := url + "/users/{username}/follows/channels?direction=DESC&sortby=created_at"
-	u = strings.Replace(u, "{username}", username, 1)
+	u := url + "/users/"+username+"/follows/channels?direction=DESC&sortby=created_at"
 	json.Unmarshal(query(u, ""), &output)
 	return output
 }
@@ -212,16 +210,16 @@ func GetStreams(oauthToken, game, streamType string, limit, offset int) Streams 
 	return output
 }
 
-func GetTopGames(limit, offset *int) TopGames {
+func GetTopGames(oauthToken string, limit, offset *int) TopGames {
 	var output TopGames
-	u := url + "/games/top?"
+	u := url + "/games/top?oauth_token="+oauthToken
 	if *limit == 0 {
-		u += "limit=10"
+		u += "&limit=10"
 	} else {
 		if *limit > 100 {
 			*limit = 100
 		}
-		u += "limit=" + strconv.Itoa(*limit)
+		u += "&limit=" + strconv.Itoa(*limit)
 	}
 	if *offset != 0 {
 		u += "&offset=" + strconv.Itoa(*offset)
