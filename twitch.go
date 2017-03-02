@@ -7,14 +7,16 @@ import (
 	"strconv"
 )
 
+// Full path to twitch.tv service
 const (
 	protocol  = "https://"
 	host      = "api.twitch.tv"
 	dir       = "/kraken"
 	url       = protocol + host + dir
-	TwitchUrl = protocol + "twitch.tv/"
+	TwitchURL = protocol + "twitch.tv/"
 )
 
+// Streams https://github.com/justintv/Twitch-API/blob/master/v3_resources/streams.md
 type Streams struct {
 	Links struct {
 		Featured string
@@ -45,7 +47,7 @@ type Streams struct {
 		Viewers     float64
 	}
 }
-
+// Game https://github.com/justintv/Twitch-API/blob/master/v3_resources/games.md
 type Game struct {
 	ID    float64
 	Links struct{}
@@ -64,7 +66,7 @@ type Game struct {
 	}
 	Name string
 }
-
+// TopGames same as games. Almost...
 type TopGames struct {
 	Links struct {
 		Next string
@@ -77,7 +79,7 @@ type TopGames struct {
 		Viewers  float64
 	}
 }
-
+// Channel https://github.com/justintv/Twitch-API/blob/master/v3_resources/channels.md
 type Channel struct {
 	_id    int
 	_links struct {
@@ -114,7 +116,7 @@ type Channel struct {
 	Views                        int
 }
 
-type onlineSubs struct {
+type OnlineSubs struct {
 	_links struct {
 		Next string
 		Self string
@@ -142,7 +144,8 @@ type onlineSubs struct {
 	}
 }
 
-type followingChannels struct {
+//FollowingChannels the list of follows
+type FollowingChannels struct {
 	_links struct {
 		Next string
 		Self string
@@ -158,6 +161,8 @@ type followingChannels struct {
 	}
 }
 
+// FollowChannel is the output by the methods
+// that control the following of a streamer.
 type FollowChannel struct {
 	notifications bool
 	Channel       Channel
@@ -175,22 +180,25 @@ func query(url, method string) []byte {
 	return ret
 }
 
-func GetFollowedChannels(oauthToken, username string) followingChannels {
-	var output followingChannels
-	u := url + "/users/"+username+"/follows/channels?direction=DESC&sortby=created_at"
+// GetFollowedChannels simple getter
+func GetFollowedChannels(oauthToken, username string) FollowingChannels {
+	var output FollowingChannels
+	u := url + "/users/" + username + "/follows/channels?direction=DESC&sortby=created_at"
 	json.Unmarshal(query(u, ""), &output)
 	return output
 }
 
-func GetLiveSubs(oauthToken string) onlineSubs {
-	var output onlineSubs
+// GetLiveSubs gets the list of the streamers that are currently live
+func GetLiveSubs(oauthToken string) OnlineSubs {
+	var output OnlineSubs
 	u := url + "/streams/followed?oauth_token=" + oauthToken + "&stream_type=live"
 	json.Unmarshal(query(u, ""), &output)
 	return output
 }
 
+// GetStreams simply retrieves live steams that are currently trending
 func GetStreams(oauthToken, game, streamType string, limit, offset int) Streams {
-	u := url + "/streams?oauth_token="+oauthToken
+	u := url + "/streams?oauth_token=" + oauthToken
 	if game != "" {
 		u += "&game=" + game
 	}
@@ -210,9 +218,10 @@ func GetStreams(oauthToken, game, streamType string, limit, offset int) Streams 
 	return output
 }
 
+// GetTopGames gets the list of games played the most rigth now
 func GetTopGames(oauthToken string, limit, offset *int) TopGames {
 	var output TopGames
-	u := url + "/games/top?oauth_token="+oauthToken
+	u := url + "/games/top?oauth_token=" + oauthToken
 	if *limit == 0 {
 		u += "&limit=10"
 	} else {
@@ -228,7 +237,7 @@ func GetTopGames(oauthToken string, limit, offset *int) TopGames {
 	return output
 }
 
-func Follow(oauthToken, username, channel string, notification bool) FollowChannel {
+func follow(oauthToken, username, channel, method string, notification bool) FollowChannel {
 	var output FollowChannel
 	u := url + "/users/" + username + "/follows/channels/" + channel + "?oauth_token=" + oauthToken
 	if notification == true {
@@ -236,4 +245,14 @@ func Follow(oauthToken, username, channel string, notification bool) FollowChann
 	}
 	json.Unmarshal(query(u, "PUT"), &output)
 	return output
+}
+
+// Follow makes you to follow the streamer
+func Follow(oauthToken, username, channel string, notification bool) FollowChannel {
+	return follow(oauthToken, username, channel, "PUT", notification)
+}
+
+// Unfollow makes you to unfollow the streamer
+func Unfollow(oauthToken, username, channel string) FollowChannel {
+	return follow(oauthToken, username, channel, "DELETE", false)
 }
