@@ -47,6 +47,7 @@ type Streams struct {
 		Viewers     float64
 	}
 }
+
 // Game https://github.com/justintv/Twitch-API/blob/master/v3_resources/games.md
 type Game struct {
 	ID    float64
@@ -66,6 +67,7 @@ type Game struct {
 	}
 	Name string
 }
+
 // TopGames same as games. Almost...
 type TopGames struct {
 	Links struct {
@@ -79,6 +81,7 @@ type TopGames struct {
 		Viewers  float64
 	}
 }
+
 // Channel https://github.com/justintv/Twitch-API/blob/master/v3_resources/channels.md
 type Channel struct {
 	_id    int
@@ -243,7 +246,7 @@ func follow(oauthToken, username, channel, method string, notification bool) Fol
 	if notification == true {
 		u += "&notification"
 	}
-	json.Unmarshal(query(u, "PUT"), &output)
+	json.Unmarshal(query(u, method), &output)
 	return output
 }
 
