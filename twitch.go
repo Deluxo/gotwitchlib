@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"net/url"
 )
 
 // Full path to twitch.tv service
@@ -12,7 +13,7 @@ const (
 	protocol  = "https://"
 	host      = "api.twitch.tv"
 	dir       = "/kraken"
-	url       = protocol + host + dir
+	URL       = protocol + host + dir
 	TwitchURL = protocol + "twitch.tv/"
 )
 
@@ -119,6 +120,7 @@ type Channel struct {
 	Views                        int
 }
 
+// OnlineSubs is a query response for subs
 type OnlineSubs struct {
 	_links struct {
 		Next string
@@ -171,12 +173,25 @@ type FollowChannel struct {
 	Channel       Channel
 }
 
-func query(url, method string) []byte {
+// Search is the query response
+// to the search query to twitch API
+type StreamSearch struct {
+	_total	int
+	_links	struct {
+		self	string
+		next	string
+	}
+	Streams	[]struct {
+		Channel Channel
+	}
+}
+
+func query(URL, method string) []byte {
 	client := &http.Client{}
 	if method == "" {
 		method = "GET"
 	}
-	request, _ := http.NewRequest(method, url, nil)
+	request, _ := http.NewRequest(method, URL, nil)
 	res, _ := client.Do(request)
 	ret, _ := ioutil.ReadAll(res.Body)
 	defer res.Body.Close()
@@ -186,7 +201,7 @@ func query(url, method string) []byte {
 // GetFollowedChannels simple getter
 func GetFollowedChannels(oauthToken, username string) FollowingChannels {
 	var output FollowingChannels
-	u := url + "/users/" + username + "/follows/channels?direction=DESC&sortby=created_at"
+	u := URL + "/users/" + username + "/follows/channels?direction=DESC&sortby=created_at"
 	json.Unmarshal(query(u, ""), &output)
 	return output
 }
@@ -194,14 +209,14 @@ func GetFollowedChannels(oauthToken, username string) FollowingChannels {
 // GetLiveSubs gets the list of the streamers that are currently live
 func GetLiveSubs(oauthToken string) OnlineSubs {
 	var output OnlineSubs
-	u := url + "/streams/followed?oauth_token=" + oauthToken + "&stream_type=live"
+	u := URL + "/streams/followed?oauth_token=" + oauthToken + "&stream_type=live"
 	json.Unmarshal(query(u, ""), &output)
 	return output
 }
 
 // GetStreams simply retrieves live steams that are currently trending
 func GetStreams(oauthToken, game, streamType string, limit, offset int) Streams {
-	u := url + "/streams?oauth_token=" + oauthToken
+	u := URL + "/streams?oauth_token=" + oauthToken
 	if game != "" {
 		u += "&game=" + game
 	}
@@ -224,7 +239,7 @@ func GetStreams(oauthToken, game, streamType string, limit, offset int) Streams 
 // GetTopGames gets the list of games played the most rigth now
 func GetTopGames(oauthToken string, limit, offset *int) TopGames {
 	var output TopGames
-	u := url + "/games/top?oauth_token=" + oauthToken
+	u := URL + "/games/top?oauth_token=" + oauthToken
 	if *limit == 0 {
 		u += "&limit=10"
 	} else {
@@ -240,9 +255,31 @@ func GetTopGames(oauthToken string, limit, offset *int) TopGames {
 	return output
 }
 
+// SearchStreams searches for streams with a given query
+func SearchStreams(oauthToken string, limit, offset *int, searchQuery *string) StreamSearch {
+	var output StreamSearch
+	u := URL + "/search/streams?oauth_token=" + oauthToken
+	if *limit == 0 {
+		u += "&limit=10"
+	} else {
+		if *limit > 100 {
+			*limit = 100
+		}
+		u += "&limit=" + strconv.Itoa(*limit)
+	}
+	if *offset != 0 {
+		u += "&offset=" + strconv.Itoa(*offset)
+	}
+	if *searchQuery != "" {
+		u += "&query=" + url.QueryEscape(*searchQuery)
+	}
+	json.Unmarshal(query(u, ""), &output)
+	return output
+}
+
 func follow(oauthToken, username, channel, method string, notification bool) FollowChannel {
 	var output FollowChannel
-	u := url + "/users/" + username + "/follows/channels/" + channel + "?oauth_token=" + oauthToken
+	u := URL + "/users/" + username + "/follows/channels/" + channel + "?oauth_token=" + oauthToken
 	if notification == true {
 		u += "&notification"
 	}
